@@ -1,10 +1,10 @@
 package cssminify
 
 import (
-	"path/filepath"
-	"os"
-	"regexp"
 	"io/ioutil"
+	"os"
+	"path/filepath"
+	"regexp"
 )
 
 func Files() []Cssfile {
@@ -14,15 +14,15 @@ func Files() []Cssfile {
 func findFiles() []Cssfile {
 	files := make([]Cssfile, 0)
 	filepath.Walk(".",
-		func (root string, info os.FileInfo, err error) error {
+		func(root string, info os.FileInfo, err error) error {
 
-		matched, _ := regexp.MatchString(".css$", root)
-		if matched {
-			file := Cssfile{pathname: root, content: readFile(root)}
-			files = append(files, file)
-		}
-		return err
-	})
+			matched, _ := regexp.MatchString(".css$", root)
+			if matched {
+				file := Cssfile{pathname: root, content: readFile(root)}
+				files = append(files, file)
+			}
+			return err
+		})
 	return files
 }
 
@@ -36,5 +36,5 @@ func readFile(root string) string {
 
 type Cssfile struct {
 	pathname string
-	content string
+	content  string
 }
