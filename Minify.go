@@ -1,5 +1,11 @@
 package cssminify
 
-func Minify(blocks []Block) string {
-	return "a"
+import (
+	"fmt"
+)
+
+func Minify(blocks []Block) {
+	for _, block := range blocks {
+		fmt.Printf("%s", block.selector)
+	}
 }
