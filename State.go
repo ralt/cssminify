@@ -9,7 +9,7 @@ type State struct {
 	state        byte
 	commentState byte
 	current      []byte
-	oldCurrent   []byte
+	previous     []byte
 	currentBlock Block
 	currentPair  Pair
 	blocks       []Block
@@ -57,7 +57,7 @@ func (s *State) slash(letter byte) {
 	switch s.commentState {
 	case CLOSING_COMMENT:
 		// Since we don't keep comments
-		s.current = s.oldCurrent
+		s.current = s.previous
 		s.commentState = COMMENT_CLOSED
 	default:
 		if s.commentState != IN_COMMENT {
@@ -70,7 +70,7 @@ func (s *State) slash(letter byte) {
 func (s *State) star(letter byte) {
 	switch s.commentState {
 	case STARTING_COMMENT:
-		s.oldCurrent = s.current[:len(s.current)-1]
+		s.previous = s.current[:len(s.current)-1]
 		s.commentState = IN_COMMENT
 		s.current = append(s.current, letter)
 	case IN_COMMENT:
