@@ -42,15 +42,14 @@ func readFile(cf chan byte, root string, wg sync.WaitGroup) {
 	for b, err := reader.ReadByte(); err != nil; b, err = reader.ReadByte() {
 		cf <- b
 	}
-	defer wg.Done()
+	wg.Done()
 }
 
 func parse(cf chan byte, cb chan Block, wg sync.WaitGroup) {
 	var letter byte
 	state := new(State)
 	for letter = <-cf; letter != 0; letter = <-cf {
-		wg.Add(1)
-		state.parse(cf, cb, wg)
+		state.parse(cf, cb)
 	}
-	defer wg.Done()
+	wg.Done()
 }
