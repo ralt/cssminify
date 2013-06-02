@@ -3,6 +3,7 @@ package cssminify
 import (
 	"bytes"
 	"strings"
+	"sync"
 )
 
 type State struct {
@@ -34,7 +35,7 @@ const (
 	IN_VALUE         = iota
 )
 
-func (s *State) parse(cf chan byte, cb chan Block) {
+func (s *State) parse(cf chan byte, cb chan Block, wg sync.WaitGroup) {
 	letter := <-cf
 	switch letter {
 	case '/':
@@ -52,6 +53,7 @@ func (s *State) parse(cf chan byte, cb chan Block) {
 	default:
 		s.rest(letter)
 	}
+	defer wg.Done()
 }
 
 func (s *State) slash(letter byte) {

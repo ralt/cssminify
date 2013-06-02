@@ -2,8 +2,8 @@ package cssminify
 
 import (
 	"bufio"
-	"fmt"
 	"os"
+	"sync"
 )
 
 type Block struct {
@@ -11,11 +11,13 @@ type Block struct {
 	pairs    []Pair
 }
 
-func Blocks(cb chan Block, file string) {
+func Blocks(cb chan Block, file string, wg sync.WaitGroup) {
 	cf := make(chan byte)
 
-	go readFile(cf, file)
-	go parse(cf, cb)
+	wg.Add(1)
+	go readFile(cf, file, wg)
+	wg.Add(1)
+	go parse(cf, cb, wg)
 }
 
 func stripLetter(content []byte) (byte, []byte) {
@@ -29,7 +31,7 @@ func stripLetter(content []byte) (byte, []byte) {
 	return letter, content
 }
 
-func readFile(cf chan byte, root string) {
+func readFile(cf chan byte, root string, wg sync.WaitGroup) {
 	file, err := os.Open(root)
 	if err != nil {
 		panic(err)
@@ -38,15 +40,17 @@ func readFile(cf chan byte, root string) {
 
 	reader := bufio.NewReader(file)
 	for b, err := reader.ReadByte(); err != nil; b, err = reader.ReadByte() {
-		fmt.Printf("%c\n", b)
 		cf <- b
 	}
+	defer wg.Done()
 }
 
-func parse(cf chan byte, cb chan Block) {
+func parse(cf chan byte, cb chan Block, wg sync.WaitGroup) {
 	var letter byte
 	state := new(State)
 	for letter = <-cf; letter != 0; letter = <-cf {
-		state.parse(cf, cb)
+		wg.Add(1)
+		state.parse(cf, cb, wg)
 	}
+	defer wg.Done()
 }
