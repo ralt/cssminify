@@ -2,7 +2,6 @@ package cssminify
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"strings"
 )
@@ -25,9 +24,10 @@ const (
 	STARTING_COMMENT = 0
 	IN_COMMENT       = 1
 	CLOSING_COMMENT  = 2
-	IN_SELECTOR      = 3
-	IN_PROPERTY      = 4
-	IN_VALUE         = 5
+	COMMENT_CLOSED   = 3
+	IN_SELECTOR      = 4
+	IN_PROPERTY      = 5
+	IN_VALUE         = 6
 )
 
 func Blocks(file string) []Block {
@@ -35,8 +35,9 @@ func Blocks(file string) []Block {
 		blocks       []Block
 		letter       byte
 		current      []byte
-		beforeState  byte
+		oldCurrent   []byte
 		state        byte
+		commentState byte
 		currentBlock Block
 		currentPair  Pair
 	)
@@ -44,39 +45,31 @@ func Blocks(file string) []Block {
 	content := []byte(readFile(file))
 
 	for letter, content = stripLetter(content); letter != 0; letter, content = stripLetter(content) {
-		if state == STARTING_COMMENT && letter != '*' {
-			state = beforeState
-		}
-		if state == CLOSING_COMMENT && letter != '/' {
-			state = beforeState
-		}
 		switch letter {
 		case '/':
-			switch state {
+			switch commentState {
 			case CLOSING_COMMENT:
-				state = beforeState
-
 				// Since we don't keep comments
-				current = []byte{}
+				current = oldCurrent
+				commentState = COMMENT_CLOSED
 			default:
-				if state != IN_COMMENT {
-					beforeState = state
-					state = STARTING_COMMENT
+				if commentState != IN_COMMENT {
+					commentState = STARTING_COMMENT
 					current = append(current, letter)
 				}
 			}
 		case '*':
-			switch state {
+			switch commentState {
 			case STARTING_COMMENT:
-				beforeState = state
-				state = IN_COMMENT
+				oldCurrent = current[:len(current)-1]
+				commentState = IN_COMMENT
 				current = append(current, letter)
 			case IN_COMMENT:
-				state = CLOSING_COMMENT
+				commentState = CLOSING_COMMENT
 				current = append(current, letter)
 			}
 		case '{':
-			if state != IN_COMMENT {
+			if commentState != IN_COMMENT {
 				if state == IN_SELECTOR {
 					state = IN_PROPERTY
 					currentBlock.selector = current
@@ -86,7 +79,7 @@ func Blocks(file string) []Block {
 				}
 			}
 		case '}':
-			if state != IN_COMMENT {
+			if commentState != IN_COMMENT {
 				if state == IN_VALUE && !bytes.Equal(nil, current) {
 					state = IN_PROPERTY
 					currentPair.value = current
@@ -102,7 +95,7 @@ func Blocks(file string) []Block {
 				}
 			}
 		case ':':
-			if state != IN_COMMENT {
+			if commentState != IN_COMMENT {
 				if state == IN_PROPERTY && !bytes.Equal(nil, current) {
 					state = IN_VALUE
 					currentPair.property = current
@@ -116,7 +109,7 @@ func Blocks(file string) []Block {
 				}
 			}
 		case ';':
-			if state != IN_COMMENT {
+			if commentState != IN_COMMENT {
 				if state == IN_VALUE {
 					state = IN_PROPERTY
 					currentPair.value = current
@@ -130,7 +123,7 @@ func Blocks(file string) []Block {
 				}
 			}
 		default:
-			if state != IN_COMMENT {
+			if commentState != IN_COMMENT {
 				if state == 0 {
 					state = IN_SELECTOR
 				}

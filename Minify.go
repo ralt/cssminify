@@ -6,6 +6,6 @@ import (
 
 func Minify(blocks []Block) {
 	for _, block := range blocks {
-		fmt.Printf("%s", block.selector)
+		fmt.Printf("%s\n", block.selector)
 	}
 }
