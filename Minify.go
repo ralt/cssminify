@@ -4,8 +4,8 @@ import (
 	"fmt"
 )
 
-func Minify(blocks []Block) {
-	for _, block := range blocks {
+func Minify(cb chan Block) {
+	for block := <-cb; block.selector != nil; block = <-cb {
 		fmt.Printf("%s\n", block.selector)
 	}
 }

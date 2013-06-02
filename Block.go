@@ -1,7 +1,9 @@
 package cssminify
 
 import (
-	"io/ioutil"
+	"bufio"
+	"fmt"
+	"os"
 )
 
 type Block struct {
@@ -9,19 +11,11 @@ type Block struct {
 	pairs    []Pair
 }
 
-func Blocks(file string) []Block {
-	var (
-		letter byte
-	)
+func Blocks(cb chan Block, file string) {
+	cf := make(chan byte)
 
-	content := []byte(readFile(file))
-	state := new(State)
-
-	for letter, content = stripLetter(content); letter != 0; letter, content = stripLetter(content) {
-		state.parse(letter)
-	}
-
-	return state.blocks
+	go readFile(cf, file)
+	go parse(cf, cb)
 }
 
 func stripLetter(content []byte) (byte, []byte) {
@@ -35,10 +29,24 @@ func stripLetter(content []byte) (byte, []byte) {
 	return letter, content
 }
 
-func readFile(root string) string {
-	content, err := ioutil.ReadFile(root)
+func readFile(cf chan byte, root string) {
+	file, err := os.Open(root)
 	if err != nil {
 		panic(err)
 	}
-	return string(content)
+	defer file.Close()
+
+	reader := bufio.NewReader(file)
+	for b, err := reader.ReadByte(); err != nil; b, err = reader.ReadByte() {
+		fmt.Printf("%c\n", b)
+		cf <- b
+	}
+}
+
+func parse(cf chan byte, cb chan Block) {
+	var letter byte
+	state := new(State)
+	for letter = <-cf; letter != 0; letter = <-cf {
+		state.parse(cf, cb)
+	}
 }
