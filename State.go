@@ -34,8 +34,7 @@ const (
 	IN_VALUE         = iota
 )
 
-func (s *State) parse(cf chan byte, cb chan Block) {
-	letter := <-cf
+func (s *State) parse(letter byte) {
 	switch letter {
 	case '/':
 		s.slash(letter)
@@ -44,7 +43,7 @@ func (s *State) parse(cf chan byte, cb chan Block) {
 	case '{':
 		s.openBracket(letter)
 	case '}':
-		s.closeBracket(cb, letter)
+		s.closeBracket(letter)
 	case ':':
 		s.colon(letter)
 	case ';':
@@ -93,7 +92,7 @@ func (s *State) openBracket(letter byte) {
 	}
 }
 
-func (s *State) closeBracket(cb chan Block, letter byte) {
+func (s *State) closeBracket(letter byte) {
 	if s.commentState != IN_COMMENT {
 		if s.state == IN_VALUE && !bytes.Equal(nil, s.current) {
 			s.state = IN_PROPERTY
@@ -102,9 +101,7 @@ func (s *State) closeBracket(cb chan Block, letter byte) {
 		}
 		if s.state == IN_PROPERTY && strings.Trim(string(s.current), " ") != "" {
 			s.current = []byte{}
-
-			cb <- s.currentBlock
-
+			s.blocks = append(s.blocks, s.currentBlock)
 			s.currentBlock = Block{}
 			s.state = IN_SELECTOR
 		} else {
