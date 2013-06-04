@@ -6,6 +6,15 @@ import (
 
 func Minify(blocks []Block) {
 	for _, block := range blocks {
-		fmt.Printf("%s\n", block.selector)
+		showSelectors(string(block.selector))
+		fmt.Print("{")
+		showPropVals(block.pairs)
+		fmt.Print("}")
 	}
+}
+
+func showSelectors(selector string) {
+}
+
+func showPropVals(pairs []Pair) {
 }
