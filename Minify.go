@@ -56,12 +56,10 @@ func minifyVal(value string) string {
 func cleanHex(value string) string {
 	re := regexp.MustCompile(`#(\d{6})`)
 	matches := re.FindAllString(value, -1)
-	if matches != nil {
-		for _, hex := range matches {
-			if isFull(hex) {
-				r := strings.NewReplacer(hex, newHex(hex))
-				value = r.Replace(value)
-			}
+	for _, hex := range matches {
+		if isFull(hex) {
+			r := strings.NewReplacer(hex, newHex(hex))
+			value = r.Replace(value)
 		}
 	}
 	return value
