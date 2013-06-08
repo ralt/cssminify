@@ -41,5 +41,38 @@ func newHex(hex string) string {
 }
 
 func cleanUrl(value string) string {
-	return value
+	re := regexp.MustCompile(`url\((.*)\)`)
+	matches := re.FindStringSubmatch(value)
+	if len(matches) != 2 {
+		return value
+	}
+
+	img := removeQuotes(matches[1])
+	bytedImg := []byte(img)
+	if string(bytedImg[0:3]) == "http" {
+		img = getWebImg(img)
+	} else {
+		img = getLocalImg(img)
+	}
+	return img
+}
+
+/**
+ * If there are quotes or double quotes around the url, take them off.
+ */
+func removeQuotes(img string) string {
+	bytedImg := []byte(img)
+	first := bytedImg[0]
+	if first == '\'' || first == '"' {
+		return string(bytedImg[1 : len(bytedImg)-1])
+	}
+	return img
+}
+
+func getWebImg(img string) string {
+	return img
+}
+
+func getLocalImg(img string) string {
+	return img
 }
