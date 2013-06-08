@@ -1,16 +1,22 @@
 package cssminify
 
 import (
+	"bytes"
+	"encoding/base64"
+	"io/ioutil"
+	"mime"
+	"net/http"
+	"path"
 	"regexp"
 	"strings"
 )
 
-func minifyVal(value string) string {
+func minifyVal(value string, file string) string {
 	value = cleanSpaces(value)
 
 	// Values need special care
 	value = cleanHex(value)
-	value = cleanUrl(value)
+	value = cleanUrl(value, file)
 	return value
 }
 
@@ -40,7 +46,7 @@ func newHex(hex string) string {
 	return string([]byte(hex)[:4])
 }
 
-func cleanUrl(value string) string {
+func cleanUrl(value string, file string) string {
 	re := regexp.MustCompile(`url\((.*)\)`)
 	matches := re.FindStringSubmatch(value)
 	if len(matches) != 2 {
@@ -48,11 +54,10 @@ func cleanUrl(value string) string {
 	}
 
 	img := removeQuotes(matches[1])
-	bytedImg := []byte(img)
-	if string(bytedImg[0:3]) == "http" {
+	if string([]byte(img)[0:4]) == "http" {
 		img = getWebImg(img)
 	} else {
-		img = getLocalImg(img)
+		img = getLocalImg(img, file)
 	}
 	return img
 }
@@ -70,9 +75,45 @@ func removeQuotes(img string) string {
 }
 
 func getWebImg(img string) string {
-	return img
+	resp, err := http.Get(img)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+	return writeWebUrl(body, resp)
 }
 
-func getLocalImg(img string) string {
-	return img
+func getLocalImg(img string, file string) string {
+	body, err := ioutil.ReadFile(path.Dir(file) + "/" + img)
+	if err != nil {
+		panic(err)
+	}
+	return writeUrl(body, mime.TypeByExtension(img))
+}
+
+func base64Encode(data []byte) string {
+	var buf bytes.Buffer
+	encoder := base64.NewEncoder(base64.StdEncoding, &buf)
+	encoder.Write(data)
+	encoder.Close()
+	return buf.String()
+}
+
+func writeWebUrl(body []byte, resp *http.Response) string {
+	return writeUrl(body, resp.Header.Get("Content-Type"))
+}
+
+func writeUrl(body []byte, mime string) string {
+	var buf bytes.Buffer
+	buf.WriteString("url(data:")
+	buf.WriteString(mime)
+	buf.WriteString(";base64,")
+	buf.WriteString(base64Encode(body))
+	buf.WriteString(")")
+	return buf.String()
 }

@@ -6,11 +6,11 @@ import (
 	"strings"
 )
 
-func Minify(blocks []Block) {
+func Minify(blocks []Block, file string) {
 	for _, block := range blocks {
 		showSelectors(string(block.selector))
 		fmt.Print("{")
-		showPropVals(block.pairs)
+		showPropVals(block.pairs, file)
 		fmt.Print("}")
 	}
 }
@@ -29,9 +29,9 @@ func minifySelector(sel string) string {
 	return cleanSpaces(sel)
 }
 
-func showPropVals(pairs []Pair) {
+func showPropVals(pairs []Pair, file string) {
 	for i, pair := range pairs {
-		fmt.Printf("%s:%s", minifyProp(string(pair.property)), minifyVal(string(pair.value)))
+		fmt.Printf("%s:%s", minifyProp(string(pair.property)), minifyVal(string(pair.value), file))
 
 		// Let's gain some space: semicolons are optional for the last value
 		if i != len(pairs)-1 {

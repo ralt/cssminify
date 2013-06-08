@@ -122,6 +122,9 @@ func (s *State) colon(letter byte) {
 			if s.state != IN_VALUE && s.state != IN_SELECTOR {
 				panic(NOT_IN_PROPERTY)
 			}
+
+			// If there, it means we're in a value
+			s.current = append(s.current, letter)
 		}
 	}
 }
