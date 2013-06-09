@@ -5,23 +5,26 @@ import (
 )
 
 type Block struct {
+	file     string
 	selector []byte
 	pairs    []Pair
 }
 
-func Blocks(file string) []Block {
+func Blocks(f chan string, b chan []Block) {
+	file := <-f
 	var (
 		letter byte
 	)
 
 	content := []byte(readFile(file))
 	state := new(State)
+	state.file = file
 
 	for letter, content = stripLetter(content); letter != 0; letter, content = stripLetter(content) {
 		state.parse(letter)
 	}
 
-	return state.blocks
+	b <- state.blocks
 }
 
 func stripLetter(content []byte) (byte, []byte) {

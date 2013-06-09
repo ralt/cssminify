@@ -6,6 +6,7 @@ import (
 )
 
 type State struct {
+	file         string
 	state        byte
 	commentState byte
 	current      []byte
@@ -101,6 +102,7 @@ func (s *State) closeBracket(letter byte) {
 		}
 		if s.state == IN_PROPERTY && strings.Trim(string(s.current), " ") != "" {
 			s.current = []byte{}
+			s.currentBlock.file = s.file
 			s.blocks = append(s.blocks, s.currentBlock)
 			s.currentBlock = Block{}
 			s.state = IN_SELECTOR

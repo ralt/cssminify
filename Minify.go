@@ -6,11 +6,12 @@ import (
 	"strings"
 )
 
-func Minify(blocks []Block, file string) {
+func Minify(b chan []Block) {
+	blocks := <-b
 	for _, block := range blocks {
 		showSelectors(string(block.selector))
 		fmt.Print("{")
-		showPropVals(block.pairs, file)
+		showPropVals(block.pairs, block.file)
 		fmt.Print("}")
 	}
 }
